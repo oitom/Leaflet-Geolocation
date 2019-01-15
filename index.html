@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <meta charset="utf-8">
+    <title>Geolocation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- CSS -->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+    <!-- <link rel="stylesheet" href="https://s3-us-west-1.amazonaws.com/patterns.esri.com/files/calcite-web/1.0.0-beta.7/css/calcite-web.min.css"> -->
+
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+    <!-- Load Leaflet from CDN-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet-src.js"></script>
+
+    <!-- this demo plugin bundles the needed code from Esri Leaflet and Esri Leaflet Geocoder -->
+    <script src="./built/bootstrap-geocoder.js"></script>
+
+    <!-- fa fa icons-->
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+    <!-- local style-->
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+
+  <body>
+    <div id="intro">
+      <div class="container">
+        <div class="page-header">
+          <h3>Geolocation</h3>
+        </div>
+        <h4><i class="fa fa-angle-right titicon" aria-hidden="true"></i> Busque um local</h4>
+        <input class="form-control" type="text" id="address" autocomplete="off" autofocus placeholder="Insira um endereço"/>
+        <a href="#" id="getLocation">
+            <i class="fa fa-map-marker" aria-hidden="true"></i>
+            Localização atual
+        </a>
+        <label class="local"></label>
+      </div>
+    </div>
+
+    <div id= "map"></div>
+  
+  <script src="js/main.js"></script>
+  <script>
+    var map = L.map('map').setView([-11.481876976562393, -53.07346688899998], 4);
+    var localAtual;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map);
+
+    // search bar
+    var search = BootstrapGeocoder.search({
+      inputTag: 'address',
+      placeholder: 'Insira um endereço'
+    }).addTo(map);
+
+    // results locations
+    var results = L.layerGroup().addTo(map);
+    search.on('results', function(data){
+      results.clearLayers();
+      for (var i = data.results.length - 1; i >= 0; i--) {
+        //results.addLayer(L.marker(data.results[i].latlng));
+        results.addLayer(L.circle(data.results[i].latlng, {
+            color: 'red',
+            fillColor: '#f00',
+            fillOpacity: 0.5,
+            radius: 100
+        })
+        .addTo(map)
+        .bindPopup(data.results[i].text)
+        .openPopup());
+        
+        localAtual = data.results[i].latlng;
+      }
+      $("#address").focus();
+    });
+    
+    // Get places
+    loadPlaces();
+
+    // Get current location
+    $("#getLocation").click(function(){ 
+        getLocate();
+        return false;
+    });
+
+    $("#address").focus();
+  </script>
+  </body>
+</html>

@@ -1,0 +1,70 @@
+
+html,
+body {
+    height: 100%;
+}
+
+#map {
+    position: absolute;
+    width: 75%;
+    height: 100vh;
+    display: block;
+    top:0;
+    bottom: 0;
+    right: 0;
+}
+
+#intro {
+    position: absolute;
+    width: 25%;
+    height: 100vh;
+    display: block!important;
+}
+
+.container {
+    width: auto;
+    max-width: 600px;
+}
+
+.input-group {
+    width: 100%;
+}
+
+li {
+    padding: 10px;
+    margin: 0;
+    list-style-type: none;
+    margin-left: -30px;
+    margin-right: 10px;
+}
+
+li:hover{
+    background: #aad3df;
+    border-color: #aad3df;
+}
+
+.geocoder-control-selected{
+    background: #aad3df;
+    border-color: #aad3df;
+}
+
+ul li {
+    list-style-type: none;
+}
+
+a#getLocation {
+    margin-top: 20px;
+    display: block;
+    width: 100%;
+    padding: 10px 10px;
+    background: #efefef;
+    text-transform: none;
+}
+.form-control:focus{
+    outline: none;
+}
+h4>.titicon {
+    color: #337ab7;
+    font-size: 24px;
+    font-weight: 700;
+}
