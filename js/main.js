@@ -1,70 +1,60 @@
 function loadPlaces() { 
-    var locales = [
-        {lat: -22.857416297999976, lng: -47.05584349999998},
-        {lat: -22.925916139564013, lng: -47.1258442252867},
-        {lat: -23.200629814005918, lng: -45.892245080553764},
-        {lat: -23.200599943303605, lng: -45.88042000129706},
-        {lat: -23.705150348160114, lng: -46.530042373904855},
-        {lat: -23.727579999999932, lng: -46.682549999999935},
-        {lat: -23.471064, lng: -47.42813475000001},
-        {lat: -23.51392999999996, lng: -47.46093999999994},
-        {lat: -23.5564695, lng: -47.44252125000001},
-        {lat: -23.49716297270314, lng: -46.87299331974024},
-        {lat: -23.591502, lng: -46.820072249999996},
-        {lat: -23.52965999999998, lng: -46.57567999999998},
-        {lat: -23.524145999999995, lng: -46.59578775},
-        {lat: -23.503479034970283, lng: -46.6152213569162},
-        {lat: -23.547807, lng: -46.65869775},
-        {lat: -23.543999999999983, lng: -46.64230999999995},
-        {lat: -22.881463563739743, lng: -47.04863221131699},
-        {lat: -23.559954443245392, lng: -46.65828976103639},
-        {lat: -23.561681605055075, lng: -46.657840065497176},
-        {lat: -23.572709999999972, lng: -46.62925999999993},
-        {lat: -23.601969999999937, lng: -46.609339999999975},
-        {lat: -23.587029000000005, lng: -46.65252599999998},
-        {lat: -23.590073713078006, lng: -46.68859400263225},
-        {lat: -23.58878407878894, lng: -46.738588423875},
-        {lat: -23.63385999999997, lng: -46.72170999999997},
-        {lat: -23.63632999999993, lng: -46.662319999999966},
-        {lat: -23.635808999999995, lng: -46.64273849999999},
-        {lat: -23.573306232846768, lng: -46.69507454691549},
-        {lat: -23.572492166253078, lng: -46.62893078711986}
-    ];
+    $.getJSON( "data/base.json", function( data ) {
+        var locals = L.layerGroup().addTo(map);
 
-    var locals = L.layerGroup().addTo(map);
+        $.each(data.places, function(index, obj) {
+            var htmlPop = ` <h6 class="tit-pop">${obj.name}</h6>
+                            <p class="line-pop"><i class="fa fa-map-marker blue" aria-hidden="true"></i> ${obj.end}</p>
+                            <p class="line-pop"><i class="fa fa-clock-o blue" aria-hidden="true"></i> ${obj.horario}</p>
+                            <p class="line-pop"><i class="fa fa-info-circle blue" aria-hidden="true"></i> ${obj.info}</p>
+                            <a class="a-pop" href="${obj.link}" target="_blank">Rota</a>`;
 
-    for (var i = 0; i < locales.length; i++) {
-        locals.addLayer(L.marker(locales[i]).bindPopup('Info location'));
-    }
+            var position = [obj.lat, obj.lng];
+            locals.addLayer(L.marker(position).bindPopup(htmlPop).on('click', clickZoom));
+        });
+    });
 }
 
-function getLocate() { 
-    // get current location
-    var current_position, current_accuracy;
+function clickZoom(e) {
+    map.setView(e.target.getLatLng(), 15);
+}
 
+
+function getLocate() { 
     function onLocationFound(e) {
+
+        if(map.hasLayer(current_accuracy))
+            map.removeLayer(current_accuracy);
+        
+        if(map.hasLayer(layer_origem))
+            map.removeLayer(layer_origem);
+
         // if position defined, then remove the existing position marker and accuracy circle from the map
         if (current_position) {
             map.removeLayer(current_position);
             map.removeLayer(current_accuracy);
         }
 
-        var radius = e.accuracy / 8;
+        var radius = 0 * 1000; // km
 
+        //point
+        var greenIcon = L.icon({
+            iconUrl: 'img/marker-icon.png',
+            shadowUrl: 'img/marker-shadow.png',
+            iconSize:     [25, 41], // size of the icon
+            shadowSize:   [41, 41], // size of the shadow
+            iconAnchor:   [15, 35], // point of the icon which will correspond to marker's location
+            shadowAnchor: [15, 35],  // the same for the shadow
+            popupAnchor:  [-1, -30] // point from which the popup should open relative to the iconAnchor
+        });
+        layer_local = L.marker(e.latlng, {icon: greenIcon}).addTo(map).bindPopup("Você está aquui");
+
+        //circ
         current_accuracy = L.circle(e.latlng, {
-                                color: 'blue',
-                                fillColor: '#00f',
-                                fillOpacity: 0.5,
-                                radius: 200
+                                radius: radius,
                             })
                             .addTo(map)
-                            .bindPopup("Você está aquui")
-                            .openPopup();
-
-        current_accuracy = L.circle(e.latlng, radius)
-                            .addTo(map)
-                            .bindPopup("Você está aquui")
-                            .openPopup();
+                            .on('click', clickZoom);
 
        localAtual = e.latlng;
     }
@@ -79,8 +69,53 @@ function getLocate() {
 
     // wrap map.locate in a function    
     function locate() {
-        map.locate({setView: true, maxZoom: 12});
+        map.locate({setView: true, maxZoom: 15});
     }
 
     setTimeout(function() { locate(); }, 300);
+}
+
+function findPlace(lat, lng, dis) { 
+    $.getJSON( "data/base.json", function( data ) {
+        $.each(data.places, function(index, obj) {
+            var dif =  parseFloat(distance(lat, lng, obj.lat, obj.lng, 'K').toFixed(2));
+            
+            if(dif <= dis) { 
+                var place = {"dis": dif, "place": obj};
+                drawItem(place);
+            }
+        });
+    });
+}
+
+function drawItem(place) { 
+    var html = `<div class="place">
+                    <h5>${place.place.name}</h5>
+                    <p>${place.place.end}</p>
+                    <p>Distância: ${place.dis} KM</p>
+                </div>`;
+
+    $("#itens-place").append(html);
+}
+
+function distance(lat1, lon1, lat2, lon2, unit) {
+	if ((lat1 == lat2) && (lon1 == lon2)) {
+		return 0;
+	}
+	else {
+		var radlat1 = Math.PI * lat1/180;
+		var radlat2 = Math.PI * lat2/180;
+		var theta = lon1-lon2;
+		var radtheta = Math.PI * theta/180;
+		var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+		if (dist > 1) {
+			dist = 1;
+		}
+		dist = Math.acos(dist);
+		dist = dist * 180/Math.PI;
+		dist = dist * 60 * 1.1515;
+		if (unit=="K") { dist = dist * 1.609344 }
+		if (unit=="N") { dist = dist * 0.8684 }
+		return dist;
+	}
 }

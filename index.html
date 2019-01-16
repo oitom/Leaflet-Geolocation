@@ -32,6 +32,9 @@
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
     <!-- local style-->
     <link rel="stylesheet" href="css/style.css" />
+    
+    <!-- utils-->
+    <script src="https://npmcdn.com/leaflet-geometryutil"></script>
   </head>
 
   <body>
@@ -41,12 +44,22 @@
           <h3>Geolocation</h3>
         </div>
         <h4><i class="fa fa-angle-right titicon" aria-hidden="true"></i> Busque um local</h4>
+        
         <input class="form-control" type="text" id="address" autocomplete="off" autofocus placeholder="Insira um endereço"/>
+        
         <a href="#" id="getLocation">
             <i class="fa fa-map-marker" aria-hidden="true"></i>
             Localização atual
         </a>
-        <label class="local"></label>
+        
+        <div class="distance-bloc">
+          <label for=""><i class="fa fa-angle-right titicon" aria-hidden="true"></i> Distância: <span class="km-cur"></span></label>
+          <input id="distance" class="form-control" type="range" min="0" max="100" value="0">
+          <span class="km-min">0</span>
+          <span class="km-max">100</span>        
+        </div>
+
+        <div id="itens-place"></div>
       </div>
     </div>
 
@@ -56,6 +69,12 @@
   <script>
     var map = L.map('map').setView([-11.481876976562393, -53.07346688899998], 4);
     var localAtual;
+    
+    var layer_origem;
+    var layer_local;
+
+    var current_position;
+    var current_accuracy;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map);
 
@@ -69,23 +88,26 @@
     var results = L.layerGroup().addTo(map);
     search.on('results', function(data){
       results.clearLayers();
+      
+      if(map.hasLayer(layer_local))
+            map.removeLayer(layer_local);
+
       for (var i = data.results.length - 1; i >= 0; i--) {
-        //results.addLayer(L.marker(data.results[i].latlng));
-        results.addLayer(L.circle(data.results[i].latlng, {
-            color: 'red',
-            fillColor: '#f00',
-            fillOpacity: 0.5,
-            radius: 100
-        })
-        .addTo(map)
-        .bindPopup(data.results[i].text)
-        .openPopup());
-        
+         var greenIcon = L.icon({
+            iconUrl: 'img/marker-icon.png',
+            shadowUrl: 'img/marker-shadow.png',
+            iconSize:     [25, 41],
+            shadowSize:   [41, 41],
+            iconAnchor:   [15, 35],
+            shadowAnchor: [15, 35],
+            popupAnchor:  [-1, -30]
+        });
+        layer_origem = L.marker(data.results[i].latlng, {icon: greenIcon}).addTo(map).bindPopup("Local de origem!");                          
         localAtual = data.results[i].latlng;
       }
       $("#address").focus();
     });
-    
+
     // Get places
     loadPlaces();
 
@@ -96,6 +118,30 @@
     });
 
     $("#address").focus();
+
+    $("#distance").change(function() { 
+        $(".km-cur").html($(this).val()+' km');
+        
+        if(map.hasLayer(current_accuracy))
+          map.removeLayer(current_accuracy);
+
+        var kmdistance = $(this).val() * 1000;
+        current_accuracy = L.circle(localAtual, { radius: kmdistance}).addTo(map).on('click', clickZoom);
+
+        if($(this).val() < 10)
+          zoom = 13;
+        else if($(this).val() > 10 && $(this).val() <  20)
+          zoom = 12;
+        else if($(this).val() > 20 && $(this).val() <  30)
+          zoom = 11;
+        else 
+          zoom = 8;
+
+        map.setView(localAtual, zoom);
+
+        $("#itens-place").html('');
+        findPlace(localAtual.lat, localAtual.lng, $(this).val());
+    });
   </script>
   </body>
 </html>
