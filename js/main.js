@@ -15,10 +15,41 @@ function loadPlaces() {
     });
 }
 
+function loadSearch() {
+    // search bar
+    var search = BootstrapGeocoder.search({
+        inputTag: 'address',
+        placeholder: 'Insira um endereço'
+    }).addTo(map);
+
+    // results locations
+    var results = L.layerGroup().addTo(map);
+    search.on('results', function(data){
+        results.clearLayers();
+        
+        if(map.hasLayer(layer_local))
+            map.removeLayer(layer_local);
+
+        for (var i = data.results.length - 1; i >= 0; i--) {
+        var greenIcon = L.icon({
+            iconUrl: 'img/marker-icon.png',
+            shadowUrl: 'img/marker-shadow.png',
+            iconSize:     [25, 41],
+            shadowSize:   [41, 41],
+            iconAnchor:   [15, 35],
+            shadowAnchor: [15, 35],
+            popupAnchor:  [-1, -30]
+        });
+        layer_origem = L.marker(data.results[i].latlng, {icon: greenIcon}).addTo(map).bindPopup("Local de origem!");                          
+        localAtual = data.results[i].latlng;
+        }
+        $("#address").focus();
+    });
+}
+
 function clickZoom(e) {
     map.setView(e.target.getLatLng(), 15);
 }
-
 
 function getLocate() { 
     function onLocationFound(e) {
@@ -58,8 +89,8 @@ function getLocate() {
     }
 
     function onLocationError(e) {
-        //alert(e.message);
-        alert("Impossível encontrar a sua localização!");
+        alert(e.message);
+        //alert("Impossível encontrar a sua localização!");
     }
 
     map.on('locationfound', onLocationFound);
@@ -69,6 +100,30 @@ function getLocate() {
         map.locate({setView: true, maxZoom: 15});
     }
     setTimeout(function() { locate(); }, 300);
+}
+
+function loadPlacesDistance(km) {
+    $(".km-cur").html(km+' km');
+        
+    if(map.hasLayer(current_accuracy))
+      map.removeLayer(current_accuracy);
+
+    var kmdistance = km * 1000;
+    current_accuracy = L.circle(localAtual, { radius: kmdistance}).addTo(map).on('click', clickZoom);
+
+    if(km < 10)
+      zoom = 13;
+    else if(km > 10 && km <  20)
+      zoom = 12;
+    else if(km > 20 && km <  30)
+      zoom = 11;
+    else 
+      zoom = 8;
+
+    map.setView(localAtual, zoom);
+
+    $("#itens-place").html('');
+    findPlace(localAtual.lat, localAtual.lng, km);
 }
 
 function findPlace(lat, lng, dis) { 
